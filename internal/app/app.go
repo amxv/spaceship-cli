@@ -131,14 +131,251 @@ func runHelp(args []string, stdout io.Writer) error {
 	}
 }
 
+func isHelpToken(v string) bool {
+	switch v {
+	case "help", "-h", "--help":
+		return true
+	default:
+		return false
+	}
+}
+
+func wantsHelp(args []string) bool {
+	for _, arg := range args {
+		if isHelpToken(arg) {
+			return true
+		}
+	}
+	return false
+}
+
+func writeLines(w io.Writer, lines ...string) {
+	for _, line := range lines {
+		_, _ = fmt.Fprintln(w, line)
+	}
+}
+
+func printAuthHelp(w io.Writer) {
+	writeLines(w,
+		"spaceship auth - credential management",
+		"",
+		"Usage:",
+		"  spaceship auth <login|status|logout>",
+		"",
+		"Subcommands:",
+		"  login    save API key + API secret in macOS Keychain",
+		"  status   show where credentials are currently loaded from",
+		"  logout   remove keychain credentials",
+		"",
+		"Examples:",
+		"  spaceship auth login",
+		"  spaceship auth login --api-key KEY --api-secret SECRET",
+		"  spaceship auth status",
+		"",
+		"Tip: env vars SPACESHIP_API_KEY and SPACESHIP_API_SECRET override keychain.",
+	)
+}
+
+func printAuthLoginHelp(w io.Writer) {
+	writeLines(w,
+		"spaceship auth login - save credentials",
+		"",
+		"Usage:",
+		"  spaceship auth login [--api-key KEY --api-secret SECRET]",
+		"",
+		"Flags:",
+		"  --api-key       Spaceship API key",
+		"  --api-secret    Spaceship API secret",
+		"",
+		"If flags are omitted, the CLI prompts you interactively.",
+		"Credentials are saved in macOS Keychain service: spaceship-cli.",
+	)
+}
+
+func printAuthStatusHelp(w io.Writer) {
+	writeLines(w,
+		"spaceship auth status - inspect active credential source",
+		"",
+		"Usage:",
+		"  spaceship auth status",
+		"",
+		"Outputs one of:",
+		"  - environment variables",
+		"  - macOS keychain",
+		"  - no credentials found",
+	)
+}
+
+func printAuthLogoutHelp(w io.Writer) {
+	writeLines(w,
+		"spaceship auth logout - remove keychain credentials",
+		"",
+		"Usage:",
+		"  spaceship auth logout",
+	)
+}
+
+func printDomainsHelp(w io.Writer) {
+	writeLines(w,
+		"spaceship domains - domain read operations",
+		"",
+		"Usage:",
+		"  spaceship domains <list|info>",
+		"",
+		"Subcommands:",
+		"  list    list domains in your account (paginated)",
+		"  info    show details for one domain",
+		"",
+		"Examples:",
+		"  spaceship domains list",
+		"  spaceship domains list --take 25 --skip 0 --order expirationDate",
+		"  spaceship domains info example.com",
+	)
+}
+
+func printDomainsListHelp(w io.Writer) {
+	writeLines(w,
+		"spaceship domains list - list your domains",
+		"",
+		"Usage:",
+		"  spaceship domains list [--take 50 --skip 0 --order FIELD --json]",
+		"",
+		"Flags:",
+		"  --take    number of domains to return (1-100, default 50)",
+		"  --skip    number of domains to skip (default 0)",
+		"  --order   one of: name|-name|unicodeName|-unicodeName|registrationDate|-registrationDate|expirationDate|-expirationDate",
+		"  --json    print raw JSON instead of table",
+	)
+}
+
+func printDomainsInfoHelp(w io.Writer) {
+	writeLines(w,
+		"spaceship domains info - show details for one domain",
+		"",
+		"Usage:",
+		"  spaceship domains info <domain> [--json]",
+		"",
+		"Examples:",
+		"  spaceship domains info example.com",
+		"  spaceship domains info example.com --json",
+	)
+}
+
+func printDNSHelp(w io.Writer) {
+	writeLines(w,
+		"spaceship dns - DNS record operations",
+		"",
+		"Usage:",
+		"  spaceship dns <list|set|delete|put>",
+		"",
+		"Subcommands:",
+		"  list      list DNS records for a domain",
+		"  set       create or update one DNS record",
+		"  delete    delete one DNS record",
+		"  put       apply bulk DNS payload from JSON file",
+		"",
+		"Get detailed help for each operation:",
+		"  spaceship help dns list",
+		"  spaceship help dns set",
+		"  spaceship help dns delete",
+		"  spaceship help dns put",
+	)
+}
+
+func printDNSListHelp(w io.Writer) {
+	writeLines(w,
+		"spaceship dns list - list DNS records",
+		"",
+		"Usage:",
+		"  spaceship dns list <domain> [--take 100 --skip 0 --order name --json]",
+		"",
+		"Flags:",
+		"  --take    number of records to return (1-500, default 100)",
+		"  --skip    number of records to skip (default 0)",
+		"  --order   one of: type|-type|name|-name",
+		"  --json    print raw JSON instead of table",
+	)
+}
+
+func printDNSSetHelp(w io.Writer) {
+	writeLines(w,
+		"spaceship dns set - create/update one DNS record",
+		"",
+		"Usage:",
+		"  spaceship dns set <domain> --type TYPE --name HOST [type-specific flags]",
+		"",
+		"Common flags:",
+		"  --type   A|AAAA|CNAME|MX|TXT|NS|PTR|ALIAS|CAA|SRV|HTTPS|SVCB|TLSA",
+		"  --name   record host, use @ for apex (default @)",
+		"  --ttl    60-3600 (default 3600)",
+		"  --force  bypass conflict check on zone update",
+		"",
+		"Quick value shortcut (recommended for common records):",
+		"  A/AAAA: --value <ip>",
+		"  CNAME:  --value <target-host>",
+		"  TXT:    --value <text>",
+		"  NS:     --value <nameserver-host>",
+		"  PTR:    --value <pointer-host>",
+		"  ALIAS:  --value <alias-host>",
+		"",
+		"Examples:",
+		"  spaceship dns set example.com --type A --name @ --value 1.2.3.4 --ttl 300",
+		"  spaceship dns set example.com --type CNAME --name www --value app.example.com --ttl 300",
+		"  spaceship dns set example.com --type TXT --name @ --value \"v=spf1 a mx -all\" --ttl 300",
+		"  spaceship dns set example.com --type MX --name @ --exchange mail.example.com --preference 10 --ttl 300",
+		"",
+		"Advanced:",
+		"  Use --data key=value repeatedly for fields not covered by dedicated flags.",
+	)
+}
+
+func printDNSDeleteHelp(w io.Writer) {
+	writeLines(w,
+		"spaceship dns delete - delete one DNS record",
+		"",
+		"Usage:",
+		"  spaceship dns delete <domain> --type TYPE --name HOST [match flags]",
+		"",
+		"Deletion must match record fields (type+name and record-specific fields).",
+		"Common records can use --value shortcut:",
+		"  A/AAAA/CNAME/TXT/NS/PTR/ALIAS",
+		"",
+		"Examples:",
+		"  spaceship dns delete example.com --type A --name @ --value 1.2.3.4",
+		"  spaceship dns delete example.com --type CNAME --name www --value app.example.com",
+		"  spaceship dns delete example.com --type MX --name @ --exchange mail.example.com --preference 10",
+	)
+}
+
+func printDNSPutHelp(w io.Writer) {
+	writeLines(w,
+		"spaceship dns put - apply bulk DNS payload from file",
+		"",
+		"Usage:",
+		"  spaceship dns put <domain> --file records.json [--force=true|false]",
+		"",
+		"File formats supported:",
+		"  1) full payload object: {\"force\":true,\"items\":[...]}",
+		"  2) record array only:    [{...},{...}]",
+		"",
+		"Examples:",
+		"  spaceship dns put example.com --file records.json",
+		"  spaceship dns put example.com --file records.json --force=true",
+	)
+}
+
 func runAuth(args []string, stdout io.Writer) error {
-	if len(args) == 0 {
-		_, _ = fmt.Fprintln(stdout, "Usage: spaceship auth <login|status|logout>")
+	if len(args) == 0 || isHelpToken(args[0]) {
+		printAuthHelp(stdout)
 		return nil
 	}
 
 	switch args[0] {
 	case "login":
+		if wantsHelp(args[1:]) {
+			printAuthLoginHelp(stdout)
+			return nil
+		}
 		fs := flag.NewFlagSet("auth login", flag.ContinueOnError)
 		fs.SetOutput(io.Discard)
 
@@ -177,6 +414,10 @@ func runAuth(args []string, stdout io.Writer) error {
 		return nil
 
 	case "status":
+		if wantsHelp(args[1:]) {
+			printAuthStatusHelp(stdout)
+			return nil
+		}
 		if os.Getenv("SPACESHIP_API_KEY") != "" && os.Getenv("SPACESHIP_API_SECRET") != "" {
 			_, _ = fmt.Fprintln(stdout, "Credentials source: environment variables (SPACESHIP_API_KEY / SPACESHIP_API_SECRET)")
 			return nil
@@ -195,6 +436,10 @@ func runAuth(args []string, stdout io.Writer) error {
 		return nil
 
 	case "logout":
+		if wantsHelp(args[1:]) {
+			printAuthLogoutHelp(stdout)
+			return nil
+		}
 		if err := credentials.Delete(); err != nil {
 			return err
 		}
@@ -202,13 +447,13 @@ func runAuth(args []string, stdout io.Writer) error {
 		return nil
 
 	default:
-		return fmt.Errorf("unknown auth command %q", args[0])
+		return fmt.Errorf("unknown auth command %q (run `spaceship help auth`)", args[0])
 	}
 }
 
 func runDomains(args []string, stdout io.Writer) error {
-	if len(args) == 0 {
-		_, _ = fmt.Fprintln(stdout, "Usage: spaceship domains <list|info>")
+	if len(args) == 0 || isHelpToken(args[0]) {
+		printDomainsHelp(stdout)
 		return nil
 	}
 
@@ -219,6 +464,10 @@ func runDomains(args []string, stdout io.Writer) error {
 
 	switch args[0] {
 	case "list":
+		if wantsHelp(args[1:]) {
+			printDomainsListHelp(stdout)
+			return nil
+		}
 		fs := flag.NewFlagSet("domains list", flag.ContinueOnError)
 		fs.SetOutput(io.Discard)
 
@@ -249,6 +498,10 @@ func runDomains(args []string, stdout io.Writer) error {
 		return nil
 
 	case "info":
+		if wantsHelp(args[1:]) {
+			printDomainsInfoHelp(stdout)
+			return nil
+		}
 		fs := flag.NewFlagSet("domains info", flag.ContinueOnError)
 		fs.SetOutput(io.Discard)
 		asJSON := fs.Bool("json", false, "Print raw JSON")
@@ -271,13 +524,13 @@ func runDomains(args []string, stdout io.Writer) error {
 		return output.PrintJSON(stdout, resp)
 
 	default:
-		return fmt.Errorf("unknown domains command %q", args[0])
+		return fmt.Errorf("unknown domains command %q (run `spaceship help domains`)", args[0])
 	}
 }
 
 func runDNS(args []string, stdout io.Writer) error {
-	if len(args) == 0 {
-		_, _ = fmt.Fprintln(stdout, "Usage: spaceship dns <list|set|delete|put>")
+	if len(args) == 0 || isHelpToken(args[0]) {
+		printDNSHelp(stdout)
 		return nil
 	}
 
@@ -288,6 +541,10 @@ func runDNS(args []string, stdout io.Writer) error {
 
 	switch args[0] {
 	case "list":
+		if wantsHelp(args[1:]) {
+			printDNSListHelp(stdout)
+			return nil
+		}
 		fs := flag.NewFlagSet("dns list", flag.ContinueOnError)
 		fs.SetOutput(io.Discard)
 
@@ -318,6 +575,10 @@ func runDNS(args []string, stdout io.Writer) error {
 		return nil
 
 	case "set":
+		if wantsHelp(args[1:]) {
+			printDNSSetHelp(stdout)
+			return nil
+		}
 		fs := flag.NewFlagSet("dns set", flag.ContinueOnError)
 		fs.SetOutput(io.Discard)
 		cfg := bindRecordFlags(fs)
@@ -349,6 +610,10 @@ func runDNS(args []string, stdout io.Writer) error {
 		return nil
 
 	case "delete":
+		if wantsHelp(args[1:]) {
+			printDNSDeleteHelp(stdout)
+			return nil
+		}
 		fs := flag.NewFlagSet("dns delete", flag.ContinueOnError)
 		fs.SetOutput(io.Discard)
 		cfg := bindRecordFlags(fs)
@@ -374,6 +639,10 @@ func runDNS(args []string, stdout io.Writer) error {
 		return nil
 
 	case "put":
+		if wantsHelp(args[1:]) {
+			printDNSPutHelp(stdout)
+			return nil
+		}
 		fs := flag.NewFlagSet("dns put", flag.ContinueOnError)
 		fs.SetOutput(io.Discard)
 		file := fs.String("file", "", "Path to JSON file containing items array or full payload object")
@@ -400,7 +669,7 @@ func runDNS(args []string, stdout io.Writer) error {
 		return nil
 
 	default:
-		return fmt.Errorf("unknown dns command %q", args[0])
+		return fmt.Errorf("unknown dns command %q (run `spaceship help dns`)", args[0])
 	}
 }
 
