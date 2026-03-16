@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	serviceName    = "spaceship-cli"
-	apiKeyAccount  = "api-key"
+	serviceName      = "spaceship-cli"
+	apiKeyAccount    = "api-key"
 	apiSecretAccount = "api-secret"
 )
 
