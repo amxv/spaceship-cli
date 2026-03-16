@@ -3,3 +3,23 @@ dist/
 node_modules/
 spaceship
 *.tgz
+
+# macOS filesystem metadata
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Go build/test artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.prof
+coverage.out
+cover.out
+*.coverprofile
