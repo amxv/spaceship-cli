@@ -1,0 +1,40 @@
+{
+  "name": "spaceship-domains-cli",
+  "version": "0.1.0",
+  "description": "Simple CLI for managing Spaceship DNS records",
+  "license": "MIT",
+  "author": "amxv",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/amxv/spaceship-domains-cli.git"
+  },
+  "homepage": "https://github.com/amxv/spaceship-domains-cli#readme",
+  "bugs": {
+    "url": "https://github.com/amxv/spaceship-domains-cli/issues"
+  },
+  "bin": {
+    "spaceship": "bin/spaceship.js"
+  },
+  "files": [
+    "bin/spaceship.js",
+    "scripts/postinstall.js",
+    "cmd",
+    "internal",
+    "go.mod",
+    "README.md"
+  ],
+  "scripts": {
+    "postinstall": "node scripts/postinstall.js",
+    "test": "node --check bin/spaceship.js && node --check scripts/postinstall.js",
+    "lint": "npm run test"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "spaceship",
+    "dns",
+    "domains",
+    "cli"
+  ]
+}

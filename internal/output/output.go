@@ -17,14 +17,14 @@ func PrintJSON(w io.Writer, v any) error {
 
 func PrintDomainListTable(w io.Writer, payload map[string]any) {
 	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
-	fmt.Fprintln(tw, "DOMAIN\tUNICODE\tEXPIRATION\tSTATUS")
+	_, _ = fmt.Fprintln(tw, "DOMAIN\tUNICODE\tEXPIRATION\tSTATUS")
 	items, _ := payload["items"].([]any)
 	for _, item := range items {
 		row, ok := item.(map[string]any)
 		if !ok {
 			continue
 		}
-		fmt.Fprintf(
+		_, _ = fmt.Fprintf(
 			tw,
 			"%s\t%s\t%s\t%s\n",
 			toString(row["name"]),
@@ -36,20 +36,20 @@ func PrintDomainListTable(w io.Writer, payload map[string]any) {
 	_ = tw.Flush()
 
 	if total, ok := payload["total"]; ok {
-		fmt.Fprintf(w, "Total: %v\n", total)
+		_, _ = fmt.Fprintf(w, "Total: %v\n", total)
 	}
 }
 
 func PrintDNSListTable(w io.Writer, payload map[string]any) {
 	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
-	fmt.Fprintln(tw, "TYPE\tNAME\tTTL\tVALUE")
+	_, _ = fmt.Fprintln(tw, "TYPE\tNAME\tTTL\tVALUE")
 	items, _ := payload["items"].([]any)
 	for _, item := range items {
 		record, ok := item.(map[string]any)
 		if !ok {
 			continue
 		}
-		fmt.Fprintf(
+		_, _ = fmt.Fprintf(
 			tw,
 			"%s\t%s\t%s\t%s\n",
 			toString(record["type"]),
@@ -61,7 +61,7 @@ func PrintDNSListTable(w io.Writer, payload map[string]any) {
 	_ = tw.Flush()
 
 	if total, ok := payload["total"]; ok {
-		fmt.Fprintf(w, "Total: %v\n", total)
+		_, _ = fmt.Fprintf(w, "Total: %v\n", total)
 	}
 }
 

@@ -14,9 +14,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ashray/spaceship-cli/internal/client"
-	"github.com/ashray/spaceship-cli/internal/credentials"
-	"github.com/ashray/spaceship-cli/internal/output"
+	"github.com/amxv/spaceship-domains-cli/internal/client"
+	"github.com/amxv/spaceship-domains-cli/internal/credentials"
+	"github.com/amxv/spaceship-domains-cli/internal/output"
 )
 
 func Run(args []string, stdout, stderr io.Writer) error {
@@ -33,34 +33,107 @@ func Run(args []string, stdout, stderr io.Writer) error {
 	case "dns":
 		return runDNS(args[1:], stdout)
 	case "help", "-h", "--help":
-		printRootHelp(stdout)
-		return nil
+		return runHelp(args[1:], stdout)
 	default:
-		return fmt.Errorf("unknown command %q", args[0])
+		return fmt.Errorf("unknown command %q (run `spaceship help`)", args[0])
 	}
 }
 
 func printRootHelp(w io.Writer) {
-	fmt.Fprintln(w, "spaceship - simple Spaceship DNS CLI")
-	fmt.Fprintln(w)
-	fmt.Fprintln(w, "Usage:")
-	fmt.Fprintln(w, "  spaceship auth <login|status|logout>")
-	fmt.Fprintln(w, "  spaceship domains <list|info>")
-	fmt.Fprintln(w, "  spaceship dns <list|set|delete|put>")
-	fmt.Fprintln(w)
-	fmt.Fprintln(w, "Examples:")
-	fmt.Fprintln(w, "  spaceship auth login")
-	fmt.Fprintln(w, "  spaceship domains list")
-	fmt.Fprintln(w, "  spaceship domains info example.com")
-	fmt.Fprintln(w, "  spaceship dns list example.com")
-	fmt.Fprintln(w, "  spaceship dns set example.com --type A --name @ --value 1.2.3.4 --ttl 300")
-	fmt.Fprintln(w, "  spaceship dns delete example.com --type A --name @ --value 1.2.3.4")
-	fmt.Fprintln(w, "  spaceship dns put example.com --file records.json --force=true")
+	writeLines(w,
+		"spaceship - manage Spaceship domains and DNS from your terminal",
+		"",
+		"Usage:",
+		"  spaceship <command> <subcommand> [arguments] [flags]",
+		"",
+		"Commands:",
+		"  auth      manage API credentials (keychain/env)",
+		"  domains   list domains and read domain details",
+		"  dns       list/update/delete DNS records",
+		"  help      show help for any command",
+		"",
+		"Quick start:",
+		"  spaceship auth login",
+		"  spaceship domains list",
+		"  spaceship dns list example.com",
+		"  spaceship dns set example.com --type A --name @ --value 1.2.3.4 --ttl 300",
+		"",
+		"Get detailed help:",
+		"  spaceship help auth",
+		"  spaceship help domains list",
+		"  spaceship help dns set",
+	)
+}
+
+func runHelp(args []string, stdout io.Writer) error {
+	if len(args) == 0 {
+		printRootHelp(stdout)
+		return nil
+	}
+
+	switch args[0] {
+	case "auth":
+		if len(args) == 1 {
+			printAuthHelp(stdout)
+			return nil
+		}
+		switch args[1] {
+		case "login":
+			printAuthLoginHelp(stdout)
+			return nil
+		case "status":
+			printAuthStatusHelp(stdout)
+			return nil
+		case "logout":
+			printAuthLogoutHelp(stdout)
+			return nil
+		default:
+			return fmt.Errorf("unknown help topic %q for auth", args[1])
+		}
+	case "domains":
+		if len(args) == 1 {
+			printDomainsHelp(stdout)
+			return nil
+		}
+		switch args[1] {
+		case "list":
+			printDomainsListHelp(stdout)
+			return nil
+		case "info":
+			printDomainsInfoHelp(stdout)
+			return nil
+		default:
+			return fmt.Errorf("unknown help topic %q for domains", args[1])
+		}
+	case "dns":
+		if len(args) == 1 {
+			printDNSHelp(stdout)
+			return nil
+		}
+		switch args[1] {
+		case "list":
+			printDNSListHelp(stdout)
+			return nil
+		case "set":
+			printDNSSetHelp(stdout)
+			return nil
+		case "delete":
+			printDNSDeleteHelp(stdout)
+			return nil
+		case "put":
+			printDNSPutHelp(stdout)
+			return nil
+		default:
+			return fmt.Errorf("unknown help topic %q for dns", args[1])
+		}
+	default:
+		return fmt.Errorf("unknown help topic %q", args[0])
+	}
 }
 
 func runAuth(args []string, stdout io.Writer) error {
 	if len(args) == 0 {
-		fmt.Fprintln(stdout, "Usage: spaceship auth <login|status|logout>")
+		_, _ = fmt.Fprintln(stdout, "Usage: spaceship auth <login|status|logout>")
 		return nil
 	}
 
@@ -100,32 +173,32 @@ func runAuth(args []string, stdout io.Writer) error {
 			return err
 		}
 
-		fmt.Fprintln(stdout, "Credentials saved to macOS Keychain service \"spaceship-cli\".")
+		_, _ = fmt.Fprintln(stdout, "Credentials saved to macOS Keychain service \"spaceship-cli\".")
 		return nil
 
 	case "status":
 		if os.Getenv("SPACESHIP_API_KEY") != "" && os.Getenv("SPACESHIP_API_SECRET") != "" {
-			fmt.Fprintln(stdout, "Credentials source: environment variables (SPACESHIP_API_KEY / SPACESHIP_API_SECRET)")
+			_, _ = fmt.Fprintln(stdout, "Credentials source: environment variables (SPACESHIP_API_KEY / SPACESHIP_API_SECRET)")
 			return nil
 		}
 
 		_, _, err := credentials.Load()
 		if err != nil {
 			if errors.Is(err, credentials.ErrNotFound) {
-				fmt.Fprintln(stdout, "No credentials found in env or keychain.")
+				_, _ = fmt.Fprintln(stdout, "No credentials found in env or keychain.")
 				return nil
 			}
 			return err
 		}
 
-		fmt.Fprintln(stdout, "Credentials source: macOS Keychain (service spaceship-cli)")
+		_, _ = fmt.Fprintln(stdout, "Credentials source: macOS Keychain (service spaceship-cli)")
 		return nil
 
 	case "logout":
 		if err := credentials.Delete(); err != nil {
 			return err
 		}
-		fmt.Fprintln(stdout, "Credentials removed from keychain.")
+		_, _ = fmt.Fprintln(stdout, "Credentials removed from keychain.")
 		return nil
 
 	default:
@@ -135,7 +208,7 @@ func runAuth(args []string, stdout io.Writer) error {
 
 func runDomains(args []string, stdout io.Writer) error {
 	if len(args) == 0 {
-		fmt.Fprintln(stdout, "Usage: spaceship domains <list|info>")
+		_, _ = fmt.Fprintln(stdout, "Usage: spaceship domains <list|info>")
 		return nil
 	}
 
@@ -204,7 +277,7 @@ func runDomains(args []string, stdout io.Writer) error {
 
 func runDNS(args []string, stdout io.Writer) error {
 	if len(args) == 0 {
-		fmt.Fprintln(stdout, "Usage: spaceship dns <list|set|delete|put>")
+		_, _ = fmt.Fprintln(stdout, "Usage: spaceship dns <list|set|delete|put>")
 		return nil
 	}
 
@@ -272,7 +345,7 @@ func runDNS(args []string, stdout io.Writer) error {
 			return err
 		}
 
-		fmt.Fprintln(stdout, "Record saved.")
+		_, _ = fmt.Fprintln(stdout, "Record saved.")
 		return nil
 
 	case "delete":
@@ -297,7 +370,7 @@ func runDNS(args []string, stdout io.Writer) error {
 			return err
 		}
 
-		fmt.Fprintln(stdout, "Record deleted.")
+		_, _ = fmt.Fprintln(stdout, "Record deleted.")
 		return nil
 
 	case "put":
@@ -323,7 +396,7 @@ func runDNS(args []string, stdout io.Writer) error {
 		if err := c.SaveResourceRecords(ctx, domain, payload); err != nil {
 			return err
 		}
-		fmt.Fprintln(stdout, "Records saved.")
+		_, _ = fmt.Fprintln(stdout, "Records saved.")
 		return nil
 
 	default:
@@ -343,7 +416,7 @@ func newClientFromStoredCreds() (*client.Client, error) {
 }
 
 func promptLine(stdout io.Writer, reader *bufio.Reader, label string) (string, error) {
-	fmt.Fprint(stdout, label)
+	_, _ = fmt.Fprint(stdout, label)
 	line, err := reader.ReadString('\n')
 	if err != nil {
 		return "", err

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/ashray/spaceship-cli/internal/app"
+	"github.com/amxv/spaceship-domains-cli/internal/app"
 )
 
 func main() {

@@ -151,7 +151,7 @@ func (c *Client) doJSON(ctx context.Context, method, apiPath string, query map[s
 	if err != nil {
 		return fmt.Errorf("request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode >= 300 {
 		return decodeAPIError(resp)
