@@ -1,61 +1,76 @@
 # spaceship-domains-cli
 
-Simple CLI for Spaceship domains + DNS.
+CLI for managing Spaceship domains and DNS records.
 
-## Install
+## 1. Install
 
 ```bash
 npm i -g spaceship-domains-cli
 ```
 
-Then run:
+This installs the `spaceship` command globally.
 
-```bash
-spaceship --help
-```
+## 2. Create API key in Spaceship
 
-## Required API scopes
+Open API Manager:
+
+- https://www.spaceship.com/application/api-manager/
+
+Create an API key and enable these scopes:
 
 - `domains:read`
 - `dnsrecords:read`
 - `dnsrecords:write`
 
-## Auth
+## 3. Log in from CLI
 
 ```bash
 spaceship auth login
-spaceship auth status
-spaceship auth logout
 ```
 
-Credentials are stored in macOS Keychain (service: `spaceship-cli`).
-You can also use env vars:
+Paste your API key and API secret when prompted.
 
-- `SPACESHIP_API_KEY`
-- `SPACESHIP_API_SECRET`
-
-## Common commands
+Optional check:
 
 ```bash
-# domains
+spaceship auth status
+```
+
+## 4. Commands
+
+### Domains
+
+```bash
 spaceship domains list
 spaceship domains info example.com
+```
 
-# dns
+### DNS
+
+```bash
 spaceship dns list example.com
 spaceship dns set example.com --type A --name @ --value 1.2.3.4 --ttl 300
 spaceship dns delete example.com --type A --name @ --value 1.2.3.4
-
-# bulk update from file
 spaceship dns put example.com --file records.json --force=true
 ```
 
-## Release
+## 5. Example: simple DNS change
 
-Create tag `vX.Y.Z` and push. GitHub Actions will:
+Set apex A record to `1.2.3.4`:
 
-1. run quality checks
-2. build cross-platform binaries and attach them to GitHub release
-3. publish npm package `spaceship-domains-cli`
+```bash
+spaceship dns set example.com --type A --name @ --value 1.2.3.4 --ttl 300
+```
 
-Set repository secret: `NPM_TOKEN`.
+Then verify:
+
+```bash
+spaceship dns list example.com
+```
+
+## Notes
+
+- Credentials are stored in macOS Keychain (service: `spaceship-cli`).
+- You can also set credentials via env vars:
+  - `SPACESHIP_API_KEY`
+  - `SPACESHIP_API_SECRET`
