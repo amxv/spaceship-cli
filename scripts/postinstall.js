@@ -7,7 +7,7 @@ const { spawnSync } = require("node:child_process");
 
 const pkg = require("../package.json");
 const repoOwner = "amxv";
-const repoName = "spaceship-domains-cli";
+const repoName = "spaceship-cli";
 
 const goosMap = {
   darwin: "darwin",
