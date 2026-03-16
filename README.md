@@ -74,3 +74,4 @@ spaceship dns list example.com
 - You can also set credentials via env vars:
   - `SPACESHIP_API_KEY`
   - `SPACESHIP_API_SECRET`
+- This CLI intentionally does not include commands for registering/deleting domains, nameserver management, transfers, SellerHub, or other broader account-context changes. It is intentionally scoped for safer agent-driven DNS/domain-read workflows.
