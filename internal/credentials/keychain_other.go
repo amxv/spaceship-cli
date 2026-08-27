@@ -1,4 +1,4 @@
-//go:build !darwin
+//go:build !darwin && !linux
 
 package credentials
 
@@ -11,7 +11,7 @@ const (
 )
 
 func saveKeychain(account, value string) error {
-	return errors.New("keychain storage is only implemented for macOS; set SPACESHIP_API_KEY and SPACESHIP_API_SECRET")
+	return errors.New("credential storage is only implemented for macOS and Linux; set SPACESHIP_API_KEY and SPACESHIP_API_SECRET")
 }
 
 func loadKeychain(account string) (string, error) {

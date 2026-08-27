@@ -92,7 +92,7 @@ Required GitHub secret:
 Credential lookup order:
 
 1. `SPACESHIP_API_KEY` + `SPACESHIP_API_SECRET` env vars
-2. macOS Keychain entries (service `spaceship-cli`)
+2. macOS Keychain entries (service `spaceship-cli`) or the Linux credential file at `~/.config/spaceship-cli/credentials.json`
 
 Useful commands:
 
