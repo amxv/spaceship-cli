@@ -10,6 +10,8 @@ npm i -g spaceship-domains-cli
 
 This installs the `spaceship` command globally.
 
+Published packages include a prebuilt binary for supported platforms, so installing the package does not require Go. Source checkouts can still build locally when a bundled or released binary is unavailable.
+
 ## 2. Create API key in Spaceship
 
 Open API Manager:

@@ -92,7 +92,7 @@ jobs:
           files: dist/*
 
   npm-publish:
-    needs: github-release
+    needs: [github-release, build-binaries]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -105,6 +105,12 @@ jobs:
         with:
           node-version: "20"
           registry-url: "https://registry.npmjs.org"
+
+      - name: Download binaries into npm package
+        uses: actions/download-artifact@v4
+        with:
+          path: bin
+          merge-multiple: true
 
       - name: Set npm version from tag
         run: |

@@ -37,6 +37,7 @@ Required Spaceship API scopes:
 - `internal/credentials/` - credential loading and keychain integration
 - `internal/output/` - table/JSON output formatters
 - `bin/spaceship.js` - npm global command shim (`spaceship`)
+- `bin/spaceship_<os>_<arch>` - release binaries bundled into npm packages by CI
 - `scripts/postinstall.js` - npm postinstall binary downloader/build fallback
 - `.github/workflows/release.yml` - tag-driven release pipeline (GitHub release + npm publish)
 - `Makefile` - local command runner for checks/build/release
@@ -81,6 +82,7 @@ Releases are tag-driven.
 3. CI workflow (`.github/workflows/release.yml`) will:
 - run quality checks
 - build cross-platform binaries and attach them to GitHub release
+- bundle those binaries into the npm package
 - publish npm package `spaceship-domains-cli`
 
 Required GitHub secret:
