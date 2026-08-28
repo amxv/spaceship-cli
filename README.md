@@ -7,6 +7,7 @@ CLI for managing Spaceship domains and DNS records.
 ```bash
 npm i -g spaceship-domains-cli
 ```
+
 This installs the `spaceship` command globally.
 
 ## 2. Create API key in Spaceship
