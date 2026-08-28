@@ -70,7 +70,8 @@ spaceship dns list example.com
 
 ## Notes
 
-- Credentials are stored in macOS Keychain (service: `spaceship-cli`).
+- On macOS, credentials are stored in Keychain (service: `spaceship-cli`).
+- On Linux, credentials are stored in `~/.config/spaceship-cli/credentials.json` with owner-only permissions.
 - You can also set credentials via env vars:
   - `SPACESHIP_API_KEY`
   - `SPACESHIP_API_SECRET`

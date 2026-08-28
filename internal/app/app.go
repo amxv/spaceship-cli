@@ -47,7 +47,7 @@ func printRootHelp(w io.Writer) {
 		"  spaceship <command> <subcommand> [arguments] [flags]",
 		"",
 		"Commands:",
-		"  auth      manage API credentials (keychain/env)",
+		"  auth      manage API credentials (keychain/file/env)",
 		"  domains   list domains and read domain details",
 		"  dns       list/update/delete DNS records",
 		"  help      show help for any command",
@@ -163,16 +163,16 @@ func printAuthHelp(w io.Writer) {
 		"  spaceship auth <login|status|logout>",
 		"",
 		"Subcommands:",
-		"  login    save API key + API secret in macOS Keychain",
+		"  login    save API key + API secret in the local credential store",
 		"  status   show where credentials are currently loaded from",
-		"  logout   remove keychain credentials",
+		"  logout   remove stored credentials",
 		"",
 		"Examples:",
 		"  spaceship auth login",
 		"  spaceship auth login --api-key KEY --api-secret SECRET",
 		"  spaceship auth status",
 		"",
-		"Tip: env vars SPACESHIP_API_KEY and SPACESHIP_API_SECRET override keychain.",
+		"Tip: env vars SPACESHIP_API_KEY and SPACESHIP_API_SECRET override stored credentials.",
 	)
 }
 
@@ -188,7 +188,7 @@ func printAuthLoginHelp(w io.Writer) {
 		"  --api-secret    Spaceship API secret",
 		"",
 		"If flags are omitted, the CLI prompts you interactively.",
-		"Credentials are saved in macOS Keychain service: spaceship-cli.",
+		"Credentials are saved in the platform credential store.",
 	)
 }
 
@@ -201,14 +201,14 @@ func printAuthStatusHelp(w io.Writer) {
 		"",
 		"Outputs one of:",
 		"  - environment variables",
-		"  - macOS keychain",
+		"  - stored credentials",
 		"  - no credentials found",
 	)
 }
 
 func printAuthLogoutHelp(w io.Writer) {
 	writeLines(w,
-		"spaceship auth logout - remove keychain credentials",
+		"spaceship auth logout - remove stored credentials",
 		"",
 		"Usage:",
 		"  spaceship auth logout",
@@ -410,7 +410,7 @@ func runAuth(args []string, stdout io.Writer) error {
 			return err
 		}
 
-		_, _ = fmt.Fprintln(stdout, "Credentials saved to macOS Keychain service \"spaceship-cli\".")
+		_, _ = fmt.Fprintln(stdout, "Credentials saved to the local credential store.")
 		return nil
 
 	case "status":
@@ -426,13 +426,13 @@ func runAuth(args []string, stdout io.Writer) error {
 		_, _, err := credentials.Load()
 		if err != nil {
 			if errors.Is(err, credentials.ErrNotFound) {
-				_, _ = fmt.Fprintln(stdout, "No credentials found in env or keychain.")
+				_, _ = fmt.Fprintln(stdout, "No credentials found in env or local store.")
 				return nil
 			}
 			return err
 		}
 
-		_, _ = fmt.Fprintln(stdout, "Credentials source: macOS Keychain (service spaceship-cli)")
+		_, _ = fmt.Fprintln(stdout, "Credentials source: stored credentials")
 		return nil
 
 	case "logout":
@@ -443,7 +443,7 @@ func runAuth(args []string, stdout io.Writer) error {
 		if err := credentials.Delete(); err != nil {
 			return err
 		}
-		_, _ = fmt.Fprintln(stdout, "Credentials removed from keychain.")
+		_, _ = fmt.Fprintln(stdout, "Credentials removed from the local store.")
 		return nil
 
 	default:
