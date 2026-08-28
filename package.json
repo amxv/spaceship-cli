@@ -16,7 +16,7 @@
     "spaceship": "bin/spaceship.js"
   },
   "files": [
-    "bin/spaceship.js",
+    "bin",
     "scripts/postinstall.js",
     "cmd",
     "internal",

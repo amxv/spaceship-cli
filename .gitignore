@@ -13,7 +13,7 @@ spaceship
 .Trashes
 
 # Go build/test artifacts
-*.exe
+dist/*.exe
 *.exe~
 *.dll
 *.so

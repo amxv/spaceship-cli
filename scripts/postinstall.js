@@ -42,6 +42,11 @@ async function main() {
   const assetURL = `https://github.com/${repoOwner}/${repoName}/releases/download/v${version}/${assetName}`;
 
   try {
+    if (installBundledBinary(assetName)) {
+      console.log(`Installed spaceship binary bundled in the npm package (${assetName}).`);
+      return;
+    }
+
     await downloadToFile(assetURL, destination);
     if (goos !== "windows") {
       fs.chmodSync(destination, 0o755);
@@ -51,6 +56,24 @@ async function main() {
     console.warn(`Failed to download prebuilt binary: ${err.message}`);
     fallbackBuildOrExit();
   }
+}
+
+function installBundledBinary(assetName) {
+  const bundledPath = path.join(binDir, assetName);
+  if (!fs.existsSync(bundledPath)) {
+    return false;
+  }
+
+  const stats = fs.statSync(bundledPath);
+  if (!stats.isFile() || stats.size === 0) {
+    throw new Error(`bundled binary is not a non-empty file: ${bundledPath}`);
+  }
+
+  fs.copyFileSync(bundledPath, destination);
+  if (goos !== "windows") {
+    fs.chmodSync(destination, 0o755);
+  }
+  return true;
 }
 
 function fallbackBuildOrExit() {
