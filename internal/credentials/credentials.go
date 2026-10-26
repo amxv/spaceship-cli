@@ -3,6 +3,7 @@ package credentials
 import (
 	"errors"
 	"os"
+	"runtime"
 	"strings"
 )
 
@@ -19,42 +20,28 @@ func Load() (string, string, error) {
 	if key != "" && secret != "" {
 		return key, secret, nil
 	}
-
-	key, err := loadKeychain(apiKeyAccount)
-	if err != nil {
-		if errors.Is(err, ErrNotFound) {
-			return "", "", ErrNotFound
-		}
-		return "", "", err
-	}
-
-	secret, err = loadKeychain(apiSecretAccount)
-	if err != nil {
-		if errors.Is(err, ErrNotFound) {
-			return "", "", ErrNotFound
-		}
-		return "", "", err
-	}
-
-	return key, secret, nil
+	return loadStoredCredentials()
 }
 
 func Save(key, secret string) error {
-	if err := saveKeychain(apiKeyAccount, key); err != nil {
-		return err
+	if strings.TrimSpace(key) == "" || strings.TrimSpace(secret) == "" {
+		return errors.New("API key and secret must both be non-empty")
 	}
-	if err := saveKeychain(apiSecretAccount, secret); err != nil {
-		return err
-	}
-	return nil
+	return saveStoredCredentials(key, secret)
 }
 
 func Delete() error {
-	if err := deleteKeychain(apiKeyAccount); err != nil && !errors.Is(err, ErrNotFound) {
-		return err
+	return deleteStoredCredentials()
+}
+
+// StoredDescription is used for status/help text, not to expose secret values.
+func StoredDescription() string {
+	switch runtime.GOOS {
+	case "darwin":
+		return "macOS Keychain (service spaceship-cli)"
+	case "linux":
+		return "Linux credential file (XDG config directory, owner-only)"
+	default:
+		return "local credential store"
 	}
-	if err := deleteKeychain(apiSecretAccount); err != nil && !errors.Is(err, ErrNotFound) {
-		return err
-	}
-	return nil
 }

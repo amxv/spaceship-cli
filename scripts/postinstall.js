@@ -42,6 +42,13 @@ async function main() {
   const assetURL = `https://github.com/${repoOwner}/${repoName}/releases/download/v${version}/${assetName}`;
 
   try {
+    // An npm release must remain installable even when GitHub is unavailable.
+    // CI bundles the same version's binaries in the published tarball.
+    if (installBundledBinary(assetName)) {
+      console.log(`Installed spaceship binary bundled in npm (${assetName}).`);
+      return;
+    }
+
     await downloadToFile(assetURL, destination);
     if (goos !== "windows") {
       fs.chmodSync(destination, 0o755);
@@ -51,6 +58,22 @@ async function main() {
     console.warn(`Failed to download prebuilt binary: ${err.message}`);
     fallbackBuildOrExit();
   }
+}
+
+function installBundledBinary(assetName) {
+  const bundledPath = path.join(binDir, assetName);
+  if (!fs.existsSync(bundledPath)) {
+    return false;
+  }
+  const info = fs.statSync(bundledPath);
+  if (!info.isFile() || info.size === 0) {
+    throw new Error(`Invalid bundled binary: ${bundledPath}`);
+  }
+  fs.copyFileSync(bundledPath, destination);
+  if (goos !== "windows") {
+    fs.chmodSync(destination, 0o755);
+  }
+  return true;
 }
 
 function fallbackBuildOrExit() {

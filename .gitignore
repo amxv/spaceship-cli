@@ -1,6 +1,7 @@
 tmp/
 dist/
 node_modules/
+pkg/
 spaceship
 *.tgz
 
