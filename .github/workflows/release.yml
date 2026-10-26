@@ -6,33 +6,24 @@ on:
       - "v*"
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   quality:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Go
-        uses: actions/setup-go@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
         with:
           go-version: "1.26"
-
-      - name: Go test
-        run: go test ./...
-
-      - name: Go vet
-        run: go vet ./...
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: "20"
-
-      - name: Node checks
-        run: npm run test
+      - name: Check release tag against package version
+        run: node -e 'const version = require("./package.json").version; if (process.env.GITHUB_REF_NAME !== `v${version}`) { throw new Error("release tag does not match package.json version"); }'
+      - run: go test ./...
+      - run: go vet ./...
+      - run: npm test
 
   build-binaries:
     needs: quality
@@ -51,45 +42,95 @@ jobs:
           - goos: windows
             goarch: amd64
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Go
-        uses: actions/setup-go@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
         with:
           go-version: "1.26"
-
       - name: Build binary
+        shell: bash
         run: |
           mkdir -p dist
           EXT=""
-          if [ "${{ matrix.goos }}" = "windows" ]; then
-            EXT=".exe"
-          fi
+          if [ "${{ matrix.goos }}" = "windows" ]; then EXT=".exe"; fi
           CGO_ENABLED=0 GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} \
             go build -trimpath -ldflags="-s -w" \
             -o "dist/spaceship_${{ matrix.goos }}_${{ matrix.goarch }}${EXT}" ./cmd/spaceship
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: binary-${{ matrix.goos }}-${{ matrix.goarch }}
           path: dist/*
+          if-no-files-found: error
 
-  github-release:
+  npm-package:
     needs: build-binaries
     runs-on: ubuntu-latest
     steps:
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
+          node-version: "20"
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: binary-*
+          path: bin
+          merge-multiple: true
+      - name: Pack and validate bundled binaries
+        run: node scripts/verify-packed-release.js
+      - uses: actions/upload-artifact@v4
+        with:
+          name: npm-tarball
+          path: pkg/*.tgz
+          if-no-files-found: error
+
+  npm-smoke:
+    needs: npm-package
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - uses: actions/download-artifact@v4
+        with:
+          name: npm-tarball
+          path: pkg
+      - name: Install actual packed archive without relying on release URLs
+        shell: bash
+        run: |
+          PREFIX="$(mktemp -d)"
+          npm install --global --prefix "$PREFIX" ./pkg/*.tgz --no-audit --no-fund --foreground-scripts | tee install.log
+          grep -q 'Installed spaceship binary bundled in npm' install.log
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            "$PREFIX/spaceship.cmd" --help
+            "$PREFIX/spaceship.cmd" auth status
+          else
+            "$PREFIX/bin/spaceship" --help
+            "$PREFIX/bin/spaceship" auth status
+          fi
+
+  github-release:
+    needs: npm-smoke
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: binary-*
           path: dist
           merge-multiple: true
-
-      - name: Publish GitHub release assets
-        uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v2
         with:
           files: dist/*
+          fail_on_unmatched_files: true
+          generate_release_notes: true
+          body: |
+            Fixes npm installation by bundling binaries for all supported platforms,
+            adds Linux credential persistence with owner-only permissions,
+            and corrects the npm license metadata to Apache-2.0.
 
   npm-publish:
     needs: github-release
@@ -97,21 +138,15 @@ jobs:
     permissions:
       contents: read
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: "20"
-          registry-url: "https://registry.npmjs.org"
-
-      - name: Set npm version from tag
-        run: |
-          VERSION="${GITHUB_REF_NAME#v}"
-          VERSION="$VERSION" node -e "const fs=require('fs');const p=require('./package.json');p.version=process.env.VERSION;fs.writeFileSync('package.json', JSON.stringify(p, null, 2)+'\\n');"
-
-      - name: Publish to npm
-        run: npm publish --access public
+          registry-url: https://registry.npmjs.org
+      - uses: actions/download-artifact@v4
+        with:
+          name: npm-tarball
+          path: pkg
+      - name: Publish exactly the archive tested in npm-smoke
+        run: npm publish ./pkg/*.tgz --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

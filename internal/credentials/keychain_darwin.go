@@ -4,6 +4,7 @@ package credentials
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"os/exec"
 	"strings"
@@ -51,6 +52,36 @@ func deleteKeychain(account string) error {
 			return ErrNotFound
 		}
 		return fmt.Errorf("failed to delete %s from keychain: %s", account, errText)
+	}
+	return nil
+}
+
+// Preserve existing macOS Keychain entries and account names across upgrades.
+func loadStoredCredentials() (string, string, error) {
+	key, err := loadKeychain(apiKeyAccount)
+	if err != nil {
+		return "", "", err
+	}
+	secret, err := loadKeychain(apiSecretAccount)
+	if err != nil {
+		return "", "", err
+	}
+	return key, secret, nil
+}
+
+func saveStoredCredentials(key, secret string) error {
+	if err := saveKeychain(apiKeyAccount, key); err != nil {
+		return err
+	}
+	return saveKeychain(apiSecretAccount, secret)
+}
+
+func deleteStoredCredentials() error {
+	if err := deleteKeychain(apiKeyAccount); err != nil && !errors.Is(err, ErrNotFound) {
+		return err
+	}
+	if err := deleteKeychain(apiSecretAccount); err != nil && !errors.Is(err, ErrNotFound) {
+		return err
 	}
 	return nil
 }

@@ -8,7 +8,9 @@ CLI for managing Spaceship domains and DNS records.
 npm i -g spaceship-domains-cli
 ```
 
-This installs the `spaceship` command globally.
+This installs the `spaceship` command globally. Published npm packages include
+prebuilt binaries for macOS (Apple Silicon and Intel), Linux (x64 and arm64),
+and Windows (x64); a Go toolchain is not required for these platforms.
 
 ## 2. Create API key in Spaceship
 
@@ -70,8 +72,17 @@ spaceship dns list example.com
 
 ## Notes
 
-- Credentials are stored in macOS Keychain (service: `spaceship-cli`).
+- On macOS, credentials are stored in Keychain (service: `spaceship-cli`).
+- On Linux, credentials are stored in an owner-only file under the XDG config
+  directory (normally `~/.config/spaceship-cli/credentials.json`). The
+  directory uses permissions `0700`, and the file uses `0600`. This works on
+  headless servers but is **not encrypted at rest**; disk encryption is
+  recommended. The CLI refuses overly permissive paths and symbolic links.
+- On Windows, use the environment variables below (interactive credential
+  storage is not yet supported).
 - You can also set credentials via env vars:
   - `SPACESHIP_API_KEY`
   - `SPACESHIP_API_SECRET`
+  - When both are set, they take precedence over stored credentials.
+- License: Apache-2.0.
 - This CLI intentionally does not include commands for registering/deleting domains, nameserver management, transfers, SellerHub, or other broader account-context changes. It is intentionally scoped for safer agent-driven DNS/domain-read workflows.

@@ -1,4 +1,4 @@
-//go:build !darwin
+//go:build !darwin && !linux
 
 package credentials
 
@@ -20,4 +20,16 @@ func loadKeychain(account string) (string, error) {
 
 func deleteKeychain(account string) error {
 	return ErrNotFound
+}
+
+func loadStoredCredentials() (string, string, error) {
+	return "", "", ErrNotFound
+}
+
+func saveStoredCredentials(key, secret string) error {
+	return errors.New("persistent credential storage is only available on macOS or Linux; set SPACESHIP_API_KEY and SPACESHIP_API_SECRET")
+}
+
+func deleteStoredCredentials() error {
+	return nil
 }
